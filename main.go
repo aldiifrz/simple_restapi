@@ -12,6 +12,8 @@ func productHandler(w http.ResponseWriter, r *http.Request) {
 		handler.GetProduct(w, r)
 	case "POST":
 		handler.AddProduct(w, r)
+	case "PUT":
+		handler.UpdateProduct(w, r)
 	case "DELETE":
 		handler.DeleteProduct(w, r)
 	default:

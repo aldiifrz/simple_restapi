@@ -87,6 +87,37 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	var updatedProduct entity.Product
+
+	err := json.NewDecoder(r.Body).Decode(&updatedProduct)
+	if err != nil {
+		log.Printf("Error decoding JSON: %v", err)
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	for i, product := range ProductItems {
+		if product.ID == updatedProduct.ID {
+			ProductItems[i] = updatedProduct
+
+			resData := dto.ResponseModels{
+				ResponseCode:    http.StatusOK,
+				ResponseMessage: "Product updated successfully",
+				Data:            ProductItems,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			json.NewEncoder(w).Encode(resData)
+			return
+		}
+	}
+
+	http.Error(w, "product not found", http.StatusNotFound)
+}
+
 func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	// Get the product ID from the URL query parameter
 	productIDStr := r.URL.Query().Get("id")
