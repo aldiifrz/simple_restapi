@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"simple_restapi/handler"
+	"simple_restapi/repository"
+	"simple_restapi/service"
 )
 
 func productHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,8 +24,16 @@ func productHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/product", productHandler)
+	// Initialize repository, service, and handler for users
+	userRepo := repository.NewInMemoryUserRepository() // Repository for users
+	userService := service.NewUserService(userRepo)    // Service for users
+	userHandler := handler.NewUserHandler(userService) // Handler for users
 
+	// Register the routes for products and users
+	http.HandleFunc("/product", productHandler)
+	http.Handle("/user", userHandler) // Route for user-related requests
+
+	// Start the server
 	fmt.Println("Server is running on port 8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
