@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	"simple_restapi/entity"
+	"simple_restapi/internal/user/entity"
 )
 
 type InMemoryUserRepository struct {

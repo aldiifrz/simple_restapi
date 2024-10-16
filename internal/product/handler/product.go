@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"simple_restapi/dto"
-	"simple_restapi/entity"
+	"simple_restapi/internal/product/dto"
+	"simple_restapi/internal/product/entity"
 	"strconv"
 )
 

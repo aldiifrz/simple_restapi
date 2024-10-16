@@ -1,6 +1,6 @@
 package dto
 
-import "simple_restapi/entity"
+import "simple_restapi/internal/product/entity"
 
 type ResponseModels struct {
 	ResponseCode    int              `json:"response_code"`

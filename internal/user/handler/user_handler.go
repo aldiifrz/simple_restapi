@@ -3,8 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"simple_restapi/entity"
-	"simple_restapi/service"
+	"simple_restapi/internal/user/entity"
+	"simple_restapi/internal/user/service"
 	"strconv"
 )
 

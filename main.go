@@ -3,21 +3,24 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"simple_restapi/handler"
-	"simple_restapi/repository"
-	"simple_restapi/service"
+
+	// Alias the product and user andler imports to avoid naming conflict
+	productHandler "simple_restapi/internal/product/handler"
+	"simple_restapi/internal/user/handler"
+	"simple_restapi/internal/user/repository"
+	"simple_restapi/internal/user/service"
 )
 
-func productHandler(w http.ResponseWriter, r *http.Request) {
+func productHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		handler.GetProduct(w, r)
+		productHandler.GetProduct(w, r)
 	case "POST":
-		handler.AddProduct(w, r)
+		productHandler.AddProduct(w, r)
 	case "PUT":
-		handler.UpdateProduct(w, r)
+		productHandler.UpdateProduct(w, r)
 	case "DELETE":
-		handler.DeleteProduct(w, r)
+		productHandler.DeleteProduct(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -30,7 +33,7 @@ func main() {
 	userHandler := handler.NewUserHandler(userService) // Handler for users
 
 	// Register the routes for products and users
-	http.HandleFunc("/product", productHandler)
+	http.HandleFunc("/product", productHandlerFunc)
 	http.Handle("/user", userHandler) // Route for user-related requests
 
 	// Start the server

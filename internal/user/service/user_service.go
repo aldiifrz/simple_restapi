@@ -1,8 +1,8 @@
 package service
 
 import (
-	"simple_restapi/entity"
-	"simple_restapi/repository"
+	"simple_restapi/internal/user/entity"
+	"simple_restapi/internal/user/repository"
 	"time"
 )
 
