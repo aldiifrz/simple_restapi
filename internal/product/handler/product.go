@@ -6,58 +6,30 @@ import (
 	"net/http"
 	"simple_restapi/internal/product/dto"
 	"simple_restapi/internal/product/entity"
+	"simple_restapi/internal/product/repository"
 	"strconv"
 )
 
-var ProductItems = []entity.Product{
-	{
-		ID:    1,
-		Name:  "Nike",
-		Qty:   100,
-		Price: 150000,
-	},
-	{
-		ID:    2, //  Changed ID from 1 to 2
-		Name:  "Joger",
-		Qty:   120,
-		Price: 120000,
-	},
-	{
-		ID:    3, //  Changed ID from 1 to 3
-		Name:  "Jeans",
-		Qty:   150,
-		Price: 100000,
-	},
-}
-
-func getNextID() int {
-	maxID := 0
-	for _, item := range ProductItems {
-		if item.ID > maxID {
-			maxID = item.ID
-		}
-	}
-	return maxID + 1
-}
+var productRepo = repository.NewInMemoryProductRepository() // Initialize repository
 
 func GetProduct(w http.ResponseWriter, r *http.Request) {
+	products := productRepo.GetAll()
+
 	resData := dto.ResponseModels{
 		ResponseCode:    http.StatusOK,
 		ResponseMessage: "Success",
-		Data:            ProductItems,
+		Data:            products,
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // 200 OK
 	json.NewEncoder(w).Encode(resData)
-
 }
 
 func AddProduct(w http.ResponseWriter, r *http.Request) {
-	var ProductItem entity.Product
+	var product entity.Product
 
 	// Decode the incoming JSON request
-	err := json.NewDecoder(r.Body).Decode(&ProductItem)
+	err := json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
 		// Log the exact error to understand the problem
 		log.Printf("Error decoding JSON : %v", err)
@@ -65,17 +37,13 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Assign a unique ID to the new product
-	ProductItem.ID = getNextID()
-
-	// Append the new product to the list of products
-	ProductItems = append(ProductItems, ProductItem)
+	product = productRepo.Add(product)
 
 	// Prepare the response data
 	resData := dto.ResponseModels{
 		ResponseCode:    http.StatusCreated, // Use 201 Created for a POST request
 		ResponseMessage: "Product added successfully",
-		Data:            ProductItems, // Include the updated list of products
+		Data:            productRepo.GetAll(),
 	}
 
 	// Set the response headers and status code
@@ -84,7 +52,6 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 
 	// Encode the response as JSON and send it back
 	json.NewEncoder(w).Encode(resData)
-
 }
 
 func UpdateProduct(w http.ResponseWriter, r *http.Request) {
@@ -96,26 +63,20 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-
-	for i, product := range ProductItems {
-		if product.ID == updatedProduct.ID {
-			ProductItems[i] = updatedProduct
-
-			resData := dto.ResponseModels{
-				ResponseCode:    http.StatusOK,
-				ResponseMessage: "Product updated successfully",
-				Data:            ProductItems,
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-
-			json.NewEncoder(w).Encode(resData)
-			return
-		}
+	err = productRepo.Update(updatedProduct)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	resData := dto.ResponseModels{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Product updated successfully",
+		Data:            productRepo.GetAll(),
 	}
 
-	http.Error(w, "product not found", http.StatusNotFound)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resData)
 }
 
 func DeleteProduct(w http.ResponseWriter, r *http.Request) {
@@ -128,27 +89,46 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid product ID", http.StatusBadRequest)
 		return
 	}
-
-	// Find and remove the product with the given ID
-	for index, item := range ProductItems {
-		if item.ID == productID {
-			// Remove the product by slicing the array
-			ProductItems = append(ProductItems[:index], ProductItems[index+1:]...)
-
-			// Prepare success response
-			resData := dto.ResponseModels{
-				ResponseCode:    http.StatusOK,
-				ResponseMessage: "Product deleted successfully",
-				Data:            ProductItems,
-			}
-
-			w.Header().Set("Context-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resData)
-			return
-		}
-
-		// If the product with the given ID is not found, return an error
-		http.Error(w, "product not found", http.StatusNotFound)
+	err = productRepo.Delete(productID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
+
+	// Prepare success response
+	resData := dto.ResponseModels{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Product deleted successfully",
+		Data:            productRepo.GetAll(),
+	}
+
+	w.Header().Set("Context-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resData)
+	return
+}
+
+func GetProductByID(w http.ResponseWriter, r *http.Request) {
+	productIDStr := r.URL.Query().Get("id")
+	productID, err := strconv.Atoi(productIDStr)
+	if err != nil || productID <= 0 {
+		http.Error(w, "invalid product ID", http.StatusBadRequest)
+		return
+	}
+
+	product, err := productRepo.FindByID(productID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	resData := dto.ResponseModels{
+		ResponseCode:    http.StatusOK,
+		ResponseMessage: "Product found",
+		Data:            product,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resData)
 }
